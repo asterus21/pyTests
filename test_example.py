@@ -55,6 +55,7 @@ def test_add_task(open_scheduler, event_type):
     assert any(REP_UUID in str for str in content)
 
 
+# fixture to delete created tasks
 @pytest.fixture(scope='module')
 def tasks_remove(open_scheduler):
     yield
@@ -83,12 +84,13 @@ def test_publication_export(tasks_remove, open_scheduler, task_name, order):
     assert open_scheduler.page.locator('.spin').count() == 0
 
 
+# API fixture
 @pytest.fixture(scope='module')
 def api():
     with API(HOST, credentials['username'], credentials['password'], verify=False) as api:
         yield api
 
-
+# fixture to clean up created files
 @pytest.fixture(scope='module')
 def files_remove(api):
     files = []
@@ -101,7 +103,7 @@ def test_publication_file_exported(api, files_remove):
     home_folder = api.request('/polyanalyst/api/v1.0/folder/list', method='get', json=GET_FILES_JSON_DATA)
     file_names = [item['name'] for item in home_folder[1]['items']]
     etalon_path = (pathlib.Path(__file__).parents[1] / 'test_etalons' / 'Filter Upstream T49817.pdf')
-    for name in file_names:        
+    for name in file_names:
         assert re.match(REPORT_REGEX, etalon_path.name)
         files_remove.append(name)    
 
