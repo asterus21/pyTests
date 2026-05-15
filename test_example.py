@@ -98,7 +98,7 @@ def files_remove(api):
 
 
 def test_publication_file_exported(api, files_remove):
-    home_folder = api.request('/polyanalyst/api/v1.0/folder/list', method='get',json=GET_FILES_JSON_DATA)
+    home_folder = api.request('/polyanalyst/api/v1.0/folder/list', method='get', json=GET_FILES_JSON_DATA)
     file_names = [item['name'] for item in home_folder[1]['items']]
     etalon_path = (pathlib.Path(__file__).parents[1] / 'test_etalons' / 'Filter Upstream T49817.pdf')
     etalon_name = etalon_path.name
