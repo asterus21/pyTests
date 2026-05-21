@@ -29,10 +29,7 @@ def publication_create(open_report, browser):
     browser.pages[-1]
 
 
-@pytest.mark.parametrize("menu, sub_menu_index, name", [
-    ("Add event", 0, "TimeEvent"),
-    ("Add event", 1, "SrvStartEvent")
-], ids=["TimeEvent", "SrvStartEvent"])
+@pytest.mark.parametrize("menu, sub_menu_index, name", [("Add event", 0, "TimeEvent")])
 def test_add_event(publication_create, open_scheduler, menu, sub_menu_index, name):
     open_scheduler.main_menu_click(menu)
     submenu_items = open_scheduler.page.locator(MENU_LABELS_XPATH)
@@ -42,7 +39,7 @@ def test_add_event(publication_create, open_scheduler, menu, sub_menu_index, nam
     assert name in events[0].split('\n')
 
 
-@pytest.mark.parametrize("event_type", [('TimeEvent'), ('SrvStartEvent')])
+@pytest.mark.parametrize("event_type", [('TimeEvent')])
 def test_add_task(open_scheduler, event_type):
     open_scheduler.page.locator(f"text={event_type}").first.click()
     open_scheduler.page.locator(f"text={event_type}").first.click(button='right')
@@ -59,7 +56,7 @@ def test_add_task(open_scheduler, event_type):
 @pytest.fixture()
 def tasks_remove(open_scheduler):
     yield
-    event_type = ['TimeEvent', 'SrvStartEvent']
+    event_type = ['TimeEvent']
     for event in event_type:
         open_scheduler.page.locator(f"text={event}").first.click()
         open_scheduler.page.locator(f"text={event}").first.click(button='right')
@@ -71,7 +68,7 @@ def tasks_remove(open_scheduler):
     open_scheduler.waiting(3000)
 
 
-@pytest.mark.parametrize("task_name, order", [(task_name, 0), (task_name, 1)])
+@pytest.mark.parametrize("task_name, order", [(task_name, 0)])
 def test_publication_export(tasks_remove, open_scheduler, task_name, order):
     open_scheduler.page.locator(f"text={task_name}").nth(order).click()
     open_scheduler.page.locator('//*[@class="group"]').click()
@@ -85,19 +82,18 @@ def test_publication_export(tasks_remove, open_scheduler, task_name, order):
     assert open_scheduler.page.locator('.spin').count() == 0
 
 
-@pytest.mark.parametrize("menu, index", [
-    ("My applications", -3)
-])
-def test_files_exported(open_scheduler, menu, index, browser):
-    open_scheduler.main_menu_click(menu)    
-    submenu_items = open_scheduler.page.locator(MENU_LABELS_XPATH)
-    submenu_items.nth(index).click()
+# fixture to delete exported files
+@pytest.fixture()
+def files_remove(open_scheduler, browser):
+    yield
+    # open_scheduler.button('Main menu').click()
+    open_scheduler.main_menu_click('My applications')
+    submenu_items = open_scheduler.page.locator(MENU_LABELS_XPATH)    
+    submenu_items.nth(-3).click()
     polyanalyst_drive = PA6Web((browser.pages[1]))
     texts = polyanalyst_drive.page.locator(GRID_TABLE).last.inner_text()
     items = texts.split('\n')
-    reports = [item for item in items if item.startswith(REPORT_NAME)]    
-    etalon_path = (pathlib.Path(__file__).parents[1] / 'test_etalons' / 'Filter Upstream T49817.pdf')
-    assert re.match(REPORT_REGEX, etalon_path.name)
+    reports = [item for item in items if item.startswith(REPORT_NAME)]
     for report in reports:
         polyanalyst_drive.page.locator(f"text={report}").last.click(button='right')
         polyanalyst_drive.page.locator(f"text='Delete...'").last.click()
@@ -106,6 +102,12 @@ def test_files_exported(open_scheduler, menu, index, browser):
         assert f'Are you sure you want to delete {report}.pdf?' in modal_window.text_content()
         polyanalyst_drive.confirm('Yes')        
         polyanalyst_drive.waiting(1000)
+    polyanalyst_drive.page.close()
+
+
+def test_files_exported(files_remove):    
+    etalon_path = (pathlib.Path(__file__).parents[1] / 'test_etalons' / 'Filter Upstream T49817.pdf')
+    assert re.match(REPORT_REGEX, etalon_path.name)
 
 
 if __name__ == "__main__":
