@@ -93,7 +93,6 @@ def test_files_exported(open_scheduler, menu, index, browser):
     submenu_items = open_scheduler.page.locator(MENU_LABELS_XPATH)
     submenu_items.nth(index).click()
     polyanalyst_drive = PA6Web((browser.pages[1]))
-    open_scheduler.page.close()
     texts = polyanalyst_drive.page.locator(GRID_TABLE).last.inner_text()
     items = texts.split('\n')
     reports = [item for item in items if item.startswith(REPORT_NAME)]    
