@@ -14,9 +14,8 @@ REPORT_REGEX = fr'{REPORT_NAME}.*\.pdf'
 
 MENU_LABELS_XPATH = MAIN_MENU + SUBMENU_LIST + MENU_LABEL
 
-add_task_actions = ('Test (immediate execution)', )
-export_formats = ('PNG', 'JPG', 'PDF', 'PPTX', 'ZIP')
 task_name = f"Export '{REPORT_NAME}' ({REP_UUID}) report publication to file"
+spin = '.spin'
 
 
 # Scheduler method
@@ -33,18 +32,19 @@ def publication_create(open_report, browser):
 def test_add_event(publication_create, open_scheduler):
     open_scheduler.main_menu_click('Add event > Add event to execute at specified time')
     events = get_scheduler_events(open_scheduler).inner_text()
-    assert "TimeEvent" in events
+    assert 'TimeEvent' in events
 
 
 def test_add_task(open_scheduler):
     all_events = get_scheduler_events(open_scheduler)
-    time_event_locator = all_events.locator(text('TimeEvent'))
-    time_event_locator.first.context_menu_click('Add task > Export publication to file')
+    time_event = all_events.locator(text('TimeEvent'))
+    time_event.first.context_menu_click('Add task > Export publication to file')
     modal_window = open_scheduler.modal_window()
-    modal_window.locator(text('Root')).last.click()
     modal_window.locator(text(REPORT_NAME)).last.click()
-    modal_window.button('Open').click()    
-    time_event_locator.first.click()
+    modal_window.button('Open').click()
+    # нужно снова кликнуть на событие, иначе assert не сработает
+    time_event.first.click()    
+    open_scheduler.waiting(1000)
     content = all_events.inner_text()
     assert REP_UUID in content
 
@@ -79,14 +79,13 @@ def files_remove(open_scheduler, browser):
     polyanalyst_drive.page.close()
 
 
-def test_publication_export(open_scheduler, tasks_remove, files_remove):
-    task_name = f"Export '{REPORT_NAME}' ({REP_UUID}) report publication to file"
+def test_publication_export(open_scheduler, tasks_remove, files_remove):        
     open_scheduler.locator(text(task_name)).first.click()
     open_scheduler.locator(text('PNG')).first.click()
     open_scheduler.locator(text('PDF')).first.click()
     open_scheduler.locator(text(task_name)).first.context_menu_click('Test (immediate execution)')    
-    open_scheduler.locator('.spin').object.wait_for(state='detached', timeout=0)
-    assert open_scheduler.locator('.spin').is_hidden()
+    open_scheduler.locator(spin).object.wait_for(state='detached', timeout=0)
+    assert open_scheduler.locator(spin).is_hidden()
     etalon_path = (pathlib.Path(__file__).parents[1] / 'test_etalons' / 'Filter Upstream T49817.pdf')
     assert re.match(REPORT_REGEX, etalon_path.name)
 
